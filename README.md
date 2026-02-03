@@ -1,12 +1,5 @@
 ---
 title: "BIOS 6624 Project 0:Cortisol and DHEA "
-date: "2026-01-26"
-header-includes: \usepackage{multirow}
-output:
-  html_document:
-    df_print: paged
-  pdf_document: default
-urlcolor: blue
 ---
 #Read data
 
