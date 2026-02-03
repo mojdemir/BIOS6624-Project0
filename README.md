@@ -1,7 +1,3 @@
----
-title: "BIOS 6624 Project 0:Cortisol and DHEA "
----
-#Read data
 
 ```{r}
 # Read data
