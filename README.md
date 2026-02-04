@@ -1,18 +1,22 @@
+#--------------------------------
+#BIOS6624 Project 0: Full Analysis
+#---------------------------------
 
 ```{r}
-# Read data
+# Load required libraries
 library(dplyr)
 library(ggplot2)
 library(lme4)
 library(lmerTest)
-library(ggeffects)
-library(binom)
+library(dplyr)
+library(tidyr)
 
+
+#load and clean data
 cortisol <- read.csv("C:/Users/mojde/OneDrive/Desktop/Colorado SPH/PhD Courses/Spring 2026/BIOS 6624/Project 0/Project0_Clean_v2.csv", na.strings = c("", " ", "NA"))
 ```
 
-## Explore Variables
- 
+#explore variables 
 ```{r}
 colnames(cortisol)
 ```
@@ -23,7 +27,6 @@ colSums(is.na(cortisol))
 
 #missing rate
 ```{r}
-
 data <- cortisol  
 
 # Select the variables 
@@ -45,19 +48,14 @@ table1 <- data.frame(
   Non_Missing = sapply(data[vars], function(x) sum(!is.na(x))),
   Missing = sapply(data[vars], function(x) sum(is.na(x)))
 )
-
 #View table
 table1
 ```
 
-#Q1: Time difference in minutes
+#Q1: Agreement analysis
 #Fix diary wake time to have values for each cell
 
-
 ```{r}
-library(dplyr)
-library(tidyr)
-
 cortisol <- cortisol %>%
   arrange(SubjectID, `Collection.Date`, `Collection.Sample`) %>%  
   group_by(SubjectID, `Collection.Date`) %>%                    
@@ -65,14 +63,13 @@ cortisol <- cortisol %>%
   ungroup()
 ```
 
-
 #prepare time
 ```{r}
 head(cortisol$Booket..Clock.Time)
 head(cortisol$MEMs..Clock.Time)
 head(cortisol$Sleep.Diary.reported.wake.time)
 ```
-
+#convert wake_time, booklet_time, and mems_time to minutes
 ```{r}
 cortisol <- cortisol %>%
   mutate(
@@ -94,7 +91,7 @@ cortisol <- cortisol %>%
   )
 ```
 
-#difference between wake time and booklet time
+#difference between wake time and booklet time, wake time and mems time
 
 ```{r}
 cortisol <- cortisol %>%
@@ -115,6 +112,7 @@ cortisol <- cortisol %>%
   )
 ```
 
+#check the minutes_since_wake and booklet_minutes_since_wake
 ```{r}
 class(cortisol$booklet_minutes_since_wake)
 # numeric
@@ -124,8 +122,6 @@ summary(cortisol$booklet_minutes_since_wake)
 ```
 
 ```{r}
-library(ggplot2)
-
 ggplot(cortisol, 
        aes(x = mems_minutes_since_wake, y = booklet_minutes_since_wake)) +
   geom_point(color = "blue", size = 2, alpha = 0.6) + 
@@ -142,8 +138,6 @@ ggplot(cortisol,
   )
 ```
 
-
-
 ```{r}
 agreement_model <- lmer(
   booklet_minutes_since_wake ~ mems_minutes_since_wake + (1 | SubjectID),
@@ -152,11 +146,9 @@ agreement_model <- lmer(
 summary(agreement_model)
 ```
 
-
 #Q2: Adherence to +30 min and +10 hr protocol times
-```{r}
-library(dplyr)
 
+```{r}
 # adherence variables using booklet times
 cortisol <- cortisol %>%
   mutate(
@@ -185,7 +177,6 @@ adherence_summary <- cortisol %>%
     proportion_adherent2 = adherent_count2 / n,
     .groups = "drop"
   )
-
 adherence_summary
 ```
 
@@ -195,6 +186,7 @@ adherence_summary
 #Cortisol > 80
 #DHEA > 5.205
 
+#find the subjects who had DHEA and cortisol as outliers
 ```{r}
 table(cortisol$SubjectID[cortisol$DHEA..nmol.L. >= 5.205])
 ```
@@ -203,6 +195,7 @@ table(cortisol$SubjectID[cortisol$DHEA..nmol.L. >= 5.205])
 table(cortisol$SubjectID[cortisol$Cortisol..nmol.L. >= 80])
 ```
 
+#exclude Cortisol and DHEA
 ```{r}
 cortisol_clean <- cortisol %>%
   filter(Cortisol..nmol.L. <= 80,
@@ -288,8 +281,6 @@ summary(dhea_model)
 ```
 
 ```{r}
-library(dplyr)
-library(tidyr)
 spaghetti_data <- cortisol_clean %>%
   select(SubjectID, time_min, log_cortisol, log_dhea) %>%
   pivot_longer(
