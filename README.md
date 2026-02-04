@@ -1,7 +1,6 @@
 
 ```{r}
 # Read data
-
 library(dplyr)
 library(ggplot2)
 library(lme4)
@@ -13,17 +12,44 @@ cortisol <- read.csv("C:/Users/mojde/OneDrive/Desktop/Colorado SPH/PhD Courses/S
 ```
 
 ## Explore Variables
-
-# 
+ 
 ```{r}
 colnames(cortisol)
-
 ```
 
 ```{r}
 colSums(is.na(cortisol))
-
 ```
+
+#missing rate
+```{r}
+
+data <- cortisol  
+
+# Select the variables 
+vars <- c(
+  "Collection.Date",
+  "Collection.Sample",
+  "Booket..Clock.Time",
+  "MEMs..Clock.Time",
+  "Sleep.Diary.reported.wake.time",
+  "Booklet..Sample.interval.Decimal.Time..mins.",
+  "MEMs..Sample.interval.Decimal.Time..mins.",
+  "Cortisol..nmol.L.",
+  "DHEA..nmol.L."
+)
+
+#Create the missing data table
+table1 <- data.frame(
+  Variable = vars,
+  Non_Missing = sapply(data[vars], function(x) sum(!is.na(x))),
+  Missing = sapply(data[vars], function(x) sum(is.na(x)))
+)
+
+#View table
+table1
+```
+
 #Q1: Time difference in minutes
 #Fix diary wake time to have values for each cell
 
@@ -45,11 +71,7 @@ cortisol <- cortisol %>%
 head(cortisol$Booket..Clock.Time)
 head(cortisol$MEMs..Clock.Time)
 head(cortisol$Sleep.Diary.reported.wake.time)
-
 ```
-
-
-
 
 ```{r}
 cortisol <- cortisol %>%
@@ -72,7 +94,6 @@ cortisol <- cortisol %>%
   )
 ```
 
-
 #difference between wake time and booklet time
 
 ```{r}
@@ -92,9 +113,7 @@ cortisol <- cortisol %>%
         units = "mins"
       ))
   )
-
 ```
-
 
 ```{r}
 class(cortisol$booklet_minutes_since_wake)
@@ -103,7 +122,6 @@ class(cortisol$booklet_minutes_since_wake)
 summary(cortisol$booklet_minutes_since_wake)
 # values are in minutes
 ```
-
 
 ```{r}
 library(ggplot2)
@@ -122,8 +140,6 @@ ggplot(cortisol,
     plot.title = element_text(face = "bold"),
     plot.subtitle = element_text(face = "italic")
   )
-
-
 ```
 
 
@@ -133,9 +149,7 @@ agreement_model <- lmer(
   booklet_minutes_since_wake ~ mems_minutes_since_wake + (1 | SubjectID),
   data = cortisol
 )
-
 summary(agreement_model)
-
 ```
 
 
@@ -175,9 +189,7 @@ adherence_summary <- cortisol %>%
 adherence_summary
 ```
 
-
 #Q3. 
-
 #flag outliers based on PI information
 #Cutoffs (nmol/L):
 #Cortisol > 80
@@ -188,26 +200,22 @@ table(cortisol$SubjectID[cortisol$DHEA..nmol.L. >= 5.205])
 ```
 
 ```{r}
+table(cortisol$SubjectID[cortisol$Cortisol..nmol.L. >= 80])
+```
+
+```{r}
 cortisol_clean <- cortisol %>%
   filter(Cortisol..nmol.L. <= 80,
          DHEA..nmol.L. <= 5.205)
 ```
 
-
-#for participants who have multiple DHEA values at the detection limit (5.205)
-
-
-
 #Basic hormone summaries
-
 ```{r}
 summary(cortisol_clean$Cortisol..nmol.L.)
 summary(cortisol_clean$DHEA..nmol.L.)
-
 ```
 
 #cortisol boxplot
-
 ```{r}
 ggplot(cortisol_clean,
        aes(x = factor(Collection.Sample),
@@ -216,18 +224,14 @@ ggplot(cortisol_clean,
   labs(x = "Sample number", y = "Cortisol (nmol/L)")
 ```
 
-
 #DHEA boxplot
-
 ```{r}
 ggplot(cortisol_clean,
        aes(x = factor(Collection.Sample),
            y = DHEA..nmol.L.)) +
   geom_boxplot() +
   labs(x = "Sample number", y = "DHEA (nmol/L)")
-
 ```
-
 
 #log-transform hormones
 ```{r}
@@ -236,13 +240,9 @@ cortisol_clean <- cortisol_clean %>%
     log_cortisol = log(Cortisol..nmol.L.),
     log_dhea = log(DHEA..nmol.L.)
   )
-
 ```
 
-
-
-#Log-scale plots
-
+#log-scale plots
 ```{r}
 ggplot(cortisol_clean,
        aes(x = factor(Collection.Sample),
@@ -257,13 +257,9 @@ ggplot(cortisol_clean,
   labs(x = "Sample number", y = "log DHEA")
 ```
 
-
 ```{r}
 summary(cortisol_clean$booklet_minutes_since_wake)
 ```
-
-
-
 
 ```{r}
 cortisol_clean <- cortisol_clean %>%
@@ -274,32 +270,26 @@ cortisol_clean <- cortisol_clean %>%
 ```
 
 #piecewise linear mixed-effects model for cortisol
-
 ```{r}
 cortisol_model <- lmer(
   log_cortisol ~ time_min + after_30 + (1 | SubjectID),
   data = cortisol_clean
 )
-
 summary(cortisol_model)
-
 ```
-#Piecewise regression for DHEA
 
+#Piecewise regression for DHEA
 ```{r}
 dhea_model <- lmer(
   log_dhea ~ time_min + after_30 + (1 | SubjectID),
   data = cortisol_clean
 )
-
 summary(dhea_model)
 ```
 
 ```{r}
-
 library(dplyr)
 library(tidyr)
-
 spaghetti_data <- cortisol_clean %>%
   select(SubjectID, time_min, log_cortisol, log_dhea) %>%
   pivot_longer(
@@ -310,7 +300,7 @@ spaghetti_data <- cortisol_clean %>%
   mutate(
     Hormone = recode(Hormone,
                      log_cortisol = "Cortisol",
-                     log_dhea = "DHEA")
+                    log_dhea = "DHEA")
   )
 ```
 
